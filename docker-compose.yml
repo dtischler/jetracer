@@ -1,0 +1,24 @@
+version: '2.1'
+volumes:
+    data: {}
+services:
+    jetracer:
+        build:
+            context: jetracer
+            dockerfile: Dockerfile.template
+        environment:
+            - UDEV=1
+        privileged: true
+        network_mode: host
+        volumes:
+            - "data:/app/data"            
+        devices:
+            - "/dev:/dev"
+        cap_add: 
+            - SYS_RAWIO
+        labels:
+          io.resin.features.kernel-modules: '1'
+          io.resin.features.firmware: '1'
+          io.resin.features.dbus: '1'
+          io.resin.features.supervisor-api: '1'
+          io.resin.features.resin-api: '1'
