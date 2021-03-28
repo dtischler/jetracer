@@ -1,12 +1,11 @@
 FROM balenalib/jetson-nano-ubuntu:bionic
 ENV DEBIAN_FRONTEND noninteractive
 RUN apt-get update && apt-get install -y \
-    lbzip2 wget tar python3 python3-pip git usbutils nano sudo python3-pil python3-smbus python3-matplotlib cmake libhdf5-serial-dev hdf5-tools libhdf5-dev zlib1g-dev zip libjpeg8-dev nodejs npm pkg-config  
+    lbzip2 wget tar python3 python3-pip git usbutils nano sudo python3-pil python3-smbus python3-matplotlib cmake libhdf5-serial-dev hdf5-tools libhdf5-dev zlib1g-dev zip libjpeg8-dev nodejs npm pkg-config libegl1 
 
 ENV UDEV=1
 
-RUN apt-get update && apt-get install -y libegl1 && \
-    wget https://developer.nvidia.com/embedded/L4T/r32_Release_v4.2/t210ref_release_aarch64/Tegra210_Linux_R32.4.2_aarch64.tbz2 && \
+RUN wget https://developer.nvidia.com/embedded/L4T/r32_Release_v4.2/t210ref_release_aarch64/Tegra210_Linux_R32.4.2_aarch64.tbz2 && \
     tar xf Tegra210_Linux_R32.4.2_aarch64.tbz2 && \
     cd Linux_for_Tegra && \
     sed -i 's/config.tbz2\"/config.tbz2\" --exclude=etc\/hosts --exclude=etc\/hostname/g' apply_binaries.sh && \
@@ -20,36 +19,14 @@ RUN apt-get update && apt-get install -y libegl1 && \
     echo "/usr/lib/aarch64-linux-gnu/tegra" > /etc/ld.so.conf.d/nvidia-tegra.conf && \
     echo "/usr/lib/aarch64-linux-gnu/tegra-egl" > /etc/ld.so.conf.d/nvidia-tegra-egl.conf && ldconfig
 
+RUN curl -sL https://deb.nodesource.com/setup_12.x -o nodesource_setup.sh && /bin/sh nodesource_setup.sh && apt update && apt-get upgrade -y nodejs
+
 RUN ln -s /usr/include/locale.h /usr/include/xlocale.h
 
-RUN pip3 install Cython
-RUN pip3 install -U pip flask numpy grpcio absl-py py-cpuinfo psutil portpicker six mock requests gast h5py astor termcolor protobuf keras-applications keras-preprocessing wrapt google-pasta
-
-RUN pip3 install --pre --no-cache-dir --extra-index-url https://developer.download.nvidia.com/compute/redist/jp/v42 tensorflow-gpu
-RUN wget https://nvidia.box.com/shared/static/cs3xn3td6sfgtene6jdvsxlr366m2dhq.whl -O torch-1.1.0a0+b457266-cp36-cp36m-linux_aarch64.whl && pip3 install torch-1.1.0a0+b457266-cp36-cp36m-linux_aarch64.whl
-RUN pip3 install -U torchvision
-RUN python3 -m pip install git+https://github.com/ipython/traitlets@4.3.3
-RUN pip3 install -U jupyter jupyterlab
-RUN curl -sL https://deb.nodesource.com/setup_12.x -o nodesource_setup.sh && /bin/sh nodesource_setup.sh && apt update && apt-get upgrade -y nodejs
-RUN jupyter labextension install @jupyter-widgets/jupyterlab-manager && jupyter labextension install @jupyterlab/statusbar && jupyter lab --generate-config
-
-WORKDIR /usr/src
-RUN cd /usr/src && git clone https://github.com/NVIDIA-AI-IOT/jetcam && cd jetcam && sudo python3 setup.py install 
-RUN apt-get install -y libopenblas-base libopenmpi-dev cuda-toolkit-10-2
-RUN apt-get install -y libcudnn8 python3-libnvinfer-dev
-RUN cd /usr/src && git clone https://github.com/NVIDIA-AI-IOT/torch2trt && cd torch2trt && sudo python3 setup.py install
-RUN cd /usr/src && git clone https://github.com/NVIDIA-AI-IOT/jetracer && cd jetracer && sudo python3 setup.py install
-
-RUN git clone https://github.com/tensorflow/models && cd models/research && git checkout 5f4d34fc && wget -O protobuf.zip https://github.com/protocolbuffers/protobuf/releases/download/v3.7.1/protoc-3.7.1-linux-aarch_64.zip && unzip protobuf.zip && ./bin/protoc object_detection/protos/*.proto --python_out=. && python3 setup.py install
-RUN cd /usr/src/models/research/slim && python3 setup.py install
-
-RUN npm install -g typescript
-RUN git clone https://github.com/jaybdub/jupyter_clickable_image_widget && cd jupyter_clickable_image_widget && python3 setup.py build && pip3 install -e . && jupyter labextension install js
-
-
-RUN \
-    apt-get update && apt-get install -y cuda-compiler-10-2 \
-    lbzip2 xorg-dev \
+RUN apt-get install -y libopenblas-base libopenmpi-dev cuda-toolkit-10-2 
+RUN apt-get install -y libcudnn8 python3-libnvinfer-dev cuda-compiler-10-2
+RUN apt-get install -y \
+    xorg-dev curl libffi-dev \
     unzip \
     libgtk-3-dev \
     libgtk2.0-dev \
@@ -63,16 +40,85 @@ RUN \
     libtiff-dev \
     python3.6-dev gstreamer1.0-plugins-good gstreamer1.0-plugins-bad \
     gfortran openexr libatlas-base-dev \
-    libtbb2 libtbb-dev \
+    libtbb2 libtbb-dev libssl1.0-dev python-setuptools \
     libdc1394-22-dev -y --no-install-recommends && \
     echo "/usr/lib/aarch64-linux-gnu/tegra" > /etc/ld.so.conf.d/nvidia-tegra.conf && \
-    ldconfig && apt-get clean
-    
+    ldconfig && apt-get clean 
+
+RUN pip3 install --upgrade pip setuptools wheel
+
+RUN pip3 install -U h5py==2.10.0
+
+RUN git clone https://github.com/NVIDIA-AI-IOT/jetcard -b jetpack_4.4
+RUN pip3 install --upgrade pip
+RUN pip3 install flask
+RUN pip3 install --upgrade numpy
+RUN pip3 install -U numpy grpcio absl-py py-cpuinfo psutil portpicker six mock requests gast astor termcolor protobuf keras-applications keras-preprocessing wrapt google-pasta
+RUN pip3 install --pre --extra-index-url https://developer.download.nvidia.com/compute/redist/jp/v44 tensorflow
+RUN wget -N https://nvidia.box.com/shared/static/9eptse6jyly1ggt9axbja2yrmj6pbarc.whl -O torch-1.6.0-cp36-cp36m-linux_aarch64.whl  
+RUN pip3 install Cython
+RUN pip3 install numpy torch-1.6.0-cp36-cp36m-linux_aarch64.whl
+RUN git clone https://github.com/pytorch/vision torchvision && cd torchvision && git checkout tags/v0.7.0 && python3 setup.py install && cd ../ && pip install 'pillow<7'
+RUN python3 -m pip install git+https://github.com/ipython/traitlets@dead2b8cdde5913572254cf6dc70b5a6065b86f8
+RUN pip3 install jupyter jupyterlab && jupyter labextension install @jupyter-widgets/jupyterlab-manager
+# RUN python3 setup.py install
+RUN git clone https://github.com/tensorflow/models TF-models && cd TF-models/research && git checkout 5f4d34fc && wget -O protobuf.zip https://github.com/protocolbuffers/protobuf/releases/download/v3.7.1/protoc-3.7.1-linux-aarch_64.zip && unzip protobuf.zip && ./bin/protoc object_detection/protos/*.proto --python_out=. && python3 setup.py install && cd slim && python3 setup.py install
+RUN git clone https://github.com/jaybdub/jupyter_clickable_image_widget && cd jupyter_clickable_image_widget && git checkout no_typescript && pip3 install -e . && jupyter labextension install js && jupyter lab build
+
+RUN git clone https://github.com/NVIDIA-AI-IOT/torch2trt.git && cd torch2trt && sudo python3 setup.py install
+RUN git clone https://github.com/NVIDIA-AI-IOT/jetcam.git && cd jetcam && sudo python3 setup.py install
+RUN git clone https://github.com/NVIDIA-AI-IOT/jetracer.git && cd jetracer && sudo python3 setup.py install
+
 RUN \    
     wget https://github.com/opencv/opencv/archive/4.0.1.zip && \
     unzip 4.0.1.zip && \
     wget https://github.com/opencv/opencv_contrib/archive/4.0.1.zip -O opencv_modules.4.0.1.zip && \
     unzip opencv_modules.4.0.1.zip
+
+RUN sudo apt-get install -y \
+        build-essential \
+        cmake \
+        git \
+        gfortran \
+        libatlas-base-dev \
+        libavcodec-dev \
+        libavformat-dev \
+        libavresample-dev \
+        libcanberra-gtk3-module \
+        libdc1394-22-dev \
+        libeigen3-dev \
+        libglew-dev \
+        libgstreamer-plugins-base1.0-dev \
+        libgstreamer-plugins-good1.0-dev \
+        libgstreamer1.0-dev \
+        libgtk-3-dev \
+        libjpeg-dev \
+        libjpeg8-dev \
+        libjpeg-turbo8-dev \
+        liblapack-dev \
+        liblapacke-dev \
+        libopenblas-dev \
+        libpng-dev \
+        libpostproc-dev \
+        libswscale-dev \
+        libtbb-dev \
+        libtbb2 \
+        libtesseract-dev \
+        libtiff-dev \
+        libv4l-dev \
+        libxine2-dev \
+        libxvidcore-dev \
+        libx264-dev \
+        pkg-config \
+        python-dev \
+        python-numpy \
+        python3-dev \
+        python3-numpy \
+        python3-matplotlib \
+        qv4l2 \
+        v4l-utils \
+        v4l2ucp \
+        zlib1g-dev
 
 RUN \
     export CUDA_HOME=/usr/local/cuda-10.2/ && \
@@ -80,15 +126,46 @@ RUN \
     PATH=${CUDA_HOME}/bin:${PATH} && export PATH && \
     mkdir -p opencv-4.0.1/build && cd opencv-4.0.1/build && \
     cmake \
-    -D WITH_CUDA=ON -D CUDA_ARCH_BIN="5.3" -D CUDA_ARCH_PTX="" -D WITH_GSTREAMER=ON -D WITH_LIBV4L=ON -D OPENCV_EXTRA_MODULES_PATH=../../opencv_contrib-4.0.1/modules \
-    -D CMAKE_BUILD_TYPE=RELEASE \
-    -D CMAKE_INSTALL_PREFIX=$(python3 -c "import sys; print(sys.prefix)") \
-    -D PYTHON_EXECUTABLE=$(which python3) .. && \
-    make -j32 && make install && ldconfig
+	-D WITH_CUDA=ON \
+	-D CUDA_ARCH_BIN=5.3,6.2,7.2 \
+	-D CUDA_ARCH_PTX= \
+	-D WITH_GSTREAMER=ON \
+	-D WITH_LIBV4L=ON \
+	-D OPENCV_EXTRA_MODULES_PATH=../../opencv_contrib-4.0.1/modules \
+	-D CMAKE_BUILD_TYPE=RELEASE \
+	-D CMAKE_INSTALL_PREFIX=$(python3 -c "import sys; print(sys.prefix)") \
+	-D PYTHON_EXECUTABLE=$(which python3) \
+	-D BUILD_EXAMPLES=OFF \
+        -D BUILD_opencv_python2=ON \
+        -D BUILD_opencv_python3=ON \
+        -D CUDA_FAST_MATH=ON \
+        -D CUDNN_VERSION='8.0' \
+        -D EIGEN_INCLUDE_PATH=/usr/include/eigen3 \
+        -D ENABLE_NEON=ON \
+        -D OPENCV_DNN_CUDA=ON \
+        -D OPENCV_ENABLE_NONFREE=ON \        
+        -D OPENCV_GENERATE_PKGCONFIG=ON \
+        -D WITH_CUBLAS=ON \        
+        -D WITH_CUDNN=ON \
+        -D WITH_OPENGL=ON .. && \
+    make -j2 && make install && ldconfig
 
-RUN \ 
-    export LD_PRELOAD=/usr/lib/aarch64-linux-gnu/libgomp.so.1 
+# RUN sudo rm -rf jupyter_clickabe_image_widget && git clone https://github.com/jaybdub/jupyter_clickable_image_widget && cd  jupyter_clickable_image_widget && sudo pip3 install -e . && jupyter labextension install js
+
+RUN sudo -H python3 -m pip install git+https://github.com/ipython/traitlets@4.3.x
+
+RUN apt-get install -y -o Dpkg::Options::=--force-confdef nvidia-l4t-gstreamer htop
 
 COPY . .
-RUN cd /usr/src/jetcam && sudo python3 setup.py install
+
 CMD ["/bin/sh", "start.sh"]
+
+
+
+
+
+
+
+
+
+
