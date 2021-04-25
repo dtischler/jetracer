@@ -1,7 +1,7 @@
 FROM balenalib/jetson-nano-ubuntu:bionic
 ENV DEBIAN_FRONTEND noninteractive
 RUN apt-get update && apt-get install -y \
-    lbzip2 wget tar python3 python3-pip git usbutils nano sudo python3-pil python3-smbus python3-matplotlib cmake libhdf5-serial-dev hdf5-tools libhdf5-dev zlib1g-dev zip libjpeg8-dev nodejs npm pkg-config libegl1 
+    lbzip2 wget tar python3 python3-pip git usbutils nano sudo python3-pil python3-smbus python3-matplotlib cmake libhdf5-serial-dev hdf5-tools libhdf5-dev zlib1g-dev zip libjpeg8-dev nodejs npm pkg-config libegl1 && apt-get clean && rm -rf /var/lib/apt/lists/*
 
 ENV UDEV=1
 
@@ -19,13 +19,13 @@ RUN wget https://developer.nvidia.com/embedded/L4T/r32_Release_v4.2/t210ref_rele
     echo "/usr/lib/aarch64-linux-gnu/tegra" > /etc/ld.so.conf.d/nvidia-tegra.conf && \
     echo "/usr/lib/aarch64-linux-gnu/tegra-egl" > /etc/ld.so.conf.d/nvidia-tegra-egl.conf && ldconfig
 
-RUN curl -sL https://deb.nodesource.com/setup_12.x -o nodesource_setup.sh && /bin/sh nodesource_setup.sh && apt update && apt-get upgrade -y nodejs
+RUN curl -sL https://deb.nodesource.com/setup_12.x -o nodesource_setup.sh && /bin/sh nodesource_setup.sh && apt-get update && apt-get upgrade -y nodejs && apt-get clean && rm -rf /var/lib/apt/lists/*
 
 RUN ln -s /usr/include/locale.h /usr/include/xlocale.h
 
-RUN apt-get install -y libopenblas-base libopenmpi-dev cuda-toolkit-10-2 
-RUN apt-get install -y libcudnn8 python3-libnvinfer-dev cuda-compiler-10-2
-RUN apt-get install -y \
+RUN apt-get update && apt-get install -y libopenblas-base libopenmpi-dev cuda-toolkit-10-2 && apt-get clean && rm -rf /var/lib/apt/lists/*
+RUN apt-get update && apt-get install -y libcudnn8 python3-libnvinfer-dev cuda-compiler-10-2 && apt-get clean && rm -rf /var/lib/apt/lists/*
+RUN apt-get update && apt-get install -y \
     xorg-dev curl libffi-dev \
     unzip \
     libgtk-3-dev \
@@ -43,7 +43,7 @@ RUN apt-get install -y \
     libtbb2 libtbb-dev libssl1.0-dev python-setuptools \
     libdc1394-22-dev -y --no-install-recommends && \
     echo "/usr/lib/aarch64-linux-gnu/tegra" > /etc/ld.so.conf.d/nvidia-tegra.conf && \
-    ldconfig && apt-get clean 
+    ldconfig && apt-get clean && rm -rf /var/lib/apt/lists/*
 
 RUN pip3 install --upgrade pip setuptools wheel
 
@@ -75,7 +75,7 @@ RUN \
     wget https://github.com/opencv/opencv_contrib/archive/4.0.1.zip -O opencv_modules.4.0.1.zip && \
     unzip opencv_modules.4.0.1.zip
 
-RUN sudo apt-get install -y \
+RUN apt-get update && apt-get install -y \
         build-essential \
         cmake \
         git \
@@ -118,7 +118,7 @@ RUN sudo apt-get install -y \
         qv4l2 \
         v4l-utils \
         v4l2ucp \
-        zlib1g-dev
+        zlib1g-dev && apt-get clean && rm -rf /var/lib/apt/lists/*
 
 RUN \
     export CUDA_HOME=/usr/local/cuda-10.2/ && \
@@ -150,11 +150,9 @@ RUN \
         -D WITH_OPENGL=ON .. && \
     make -j2 && make install && ldconfig
 
-# RUN sudo rm -rf jupyter_clickabe_image_widget && git clone https://github.com/jaybdub/jupyter_clickable_image_widget && cd  jupyter_clickable_image_widget && sudo pip3 install -e . && jupyter labextension install js
-
 RUN sudo -H python3 -m pip install git+https://github.com/ipython/traitlets@4.3.x
 
-RUN apt-get install -y -o Dpkg::Options::=--force-confdef nvidia-l4t-gstreamer htop
+RUN apt-get update && apt-get install -y -o Dpkg::Options::=--force-confdef nvidia-l4t-gstreamer htop && apt-get clean && rm -rf /var/lib/apt/lists/*
 
 COPY . .
 
