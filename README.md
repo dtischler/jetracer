@@ -18,9 +18,10 @@ With that overall conceptual understanding, the basic process to follow for this
 - Flash that downloaded OS image to an SD Card, insert into the JetRacer Nano, and boot it up.
 ![Alt text](/img/image5.png?raw=true)
 - After a few moments, the Nano will show up in the balenaCloud dashboard, and it is ready for containers at this point.
-![Alt text](/img/image6.png?raw=true)
 - Click this button, to start the build of this repo on the balena hosted builders:
+
 [![balena deploy button](https://www.balena.io/deploy.png)](https://dashboard.balena-cloud.com/deploy?repoUrl=https://github.com/dtischler/jetracer)
+
 - This will take a long time to build, perhaps multiple hours, and result in a very large container of about 30gb.  Once it is done building, the Nano will automatically download it.  This means you have a 30gb download to perform, also quite time consuming as you can imagine.  Make some tea.  
 - Finally, once the download finishes and the container starts, the Jupyter server will start and you can connect to it from a browser.  You can find your Nano's IP address in the balenaCloud dashboard.  And over on the right hand side, in the Logs streaming from the Nano, you will see the Token that is generated.  Browse to that IP address of the Nano, enter your token, and you are ready to use JetRacer!
 ![Alt text](/img/image7.png?raw=true)
